@@ -4,7 +4,8 @@ use Moose;
 
 has players => (
     is  => 'rw',
-    isa => 'HashRef[MUD::Player]'
+    isa => 'HashRef[MUD::Player]',
+    default => sub { +{} },
 );
 
 1;
