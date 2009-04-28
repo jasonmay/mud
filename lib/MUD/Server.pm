@@ -91,7 +91,7 @@ sub mud_client_input {
     my $player = $self->connections->{$wheel_id};
     $input =~ s/[\r\n]*$//;
     $_[HEAP]{client}{$wheel_id}->put(
-        $player->input_state->[-1]->run($self->universe, $player, $input)
+        $player->input_state->[-1]->run($player, $input)
     );
 };
 

@@ -4,6 +4,12 @@ use Moose;
 
 sub run { die "This method must be overwritten" }
 
+has 'universe' => (
+    is       => 'rw',
+    isa      => 'MUD::Universe',
+    requires => 1,
+);
+
 =head1 NAME
 
 MUD::Input::State - base class of where the player I/O fun happens
@@ -15,7 +21,6 @@ MUD::Input::State - base class of where the player I/O fun happens
 
   sub run {
       my $self     = shift;
-      my $universe = shift; # Your MUD's universe (MUD::Universe)
       my $you      = shift; # MUD::Player doing the invoking
       my $input    = shift; # The input provided
 
