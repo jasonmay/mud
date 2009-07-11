@@ -16,11 +16,11 @@ has port => (
     default => 6715
 );
 
-has connections => (
-    is      => 'rw',
-    isa     => 'HashRef[MUD::Player]',
-    default => sub { +{} }
-);
+#has connections => (
+#    is      => 'rw',
+#    isa     => 'HashRef[MUD::Player]',
+#    default => sub { +{} }
+#);
 
 has starting_state => (
     is       => 'rw',
@@ -72,7 +72,7 @@ sub mud_client_accept {
     $_[HEAP]{client}{ $io_wheel->ID() } = $io_wheel;
     my $id = $io_wheel->ID();
     printf STDERR "Connection [%d] :)\n", $id;
-    $self->connections->{$id} = $self->spawn_player($self->universe);
+    $self->universe->players->{$id} = $self->spawn_player($self->universe);
     $_[HEAP]{client}{$id}->put($self->welcome_message);
 };
 
@@ -88,7 +88,7 @@ sub mud_server_error {
 sub mud_client_input {
     my ($self) = @_;
     my ($input, $wheel_id) = @_[ARG0, ARG1];
-    my $player = $self->connections->{$wheel_id};
+    my $player = $self->universe->players->{$wheel_id};
     $input =~ s/[\r\n]*$//;
     $_[HEAP]{client}{$wheel_id}->put(
         $player->input_state->[-1]->run($player, $input)
