@@ -7,7 +7,7 @@ sub run { die "This method must be overwritten" }
 has 'universe' => (
     is       => 'rw',
     isa      => 'MUD::Universe',
-    requires => 1,
+    required => 1,
 );
 
 =head1 NAME
