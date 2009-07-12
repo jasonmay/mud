@@ -14,6 +14,11 @@ has input_state => (
     default => sub { [] }
 );
 
+has io => (
+    is      => 'rw',
+    isa     => 'POE::Wheel::ReadWrite',
+);
+
 =head1 NAME
 
 MUD::Player - a player XXX TODO FIXME

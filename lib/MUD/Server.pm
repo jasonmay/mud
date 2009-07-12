@@ -73,6 +73,7 @@ sub mud_client_accept {
     my $id = $io_wheel->ID();
     printf STDERR "Connection [%d] :)\n", $id;
     $self->universe->players->{$id} = $self->spawn_player($id, $self->universe);
+    $self->universe->players->{$id}->io($io_wheel);
     $_[HEAP]{client}{$id}->put($self->welcome_message);
 };
 
