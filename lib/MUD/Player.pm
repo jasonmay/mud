@@ -19,6 +19,11 @@ has io => (
     isa     => 'POE::Wheel::ReadWrite',
 );
 
+sub disconnect {
+    my $self = shift;
+    $self->io->shutdown_output;
+}
+
 =head1 NAME
 
 MUD::Player - a player XXX TODO FIXME
