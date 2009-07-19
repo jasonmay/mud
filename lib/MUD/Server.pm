@@ -98,6 +98,7 @@ sub _response {
     my $input    = shift;
     my $player = $self->universe->players->{$wheel_id};
 
+    return '' unless @{$player->input_state};
     return $player->input_state->[0]->run($player, $input);
 }
 
