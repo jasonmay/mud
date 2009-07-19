@@ -11,7 +11,7 @@ has name => (
 has input_state => (
     is      => 'rw',
     isa     => 'ArrayRef[MUD::Input::State]',
-    default => sub { [] }
+    default => sub { [] },
 );
 
 has io => (

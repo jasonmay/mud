@@ -85,15 +85,22 @@ sub mud_server_error {
     delete $_[HEAP]{server};
 };
 
+sub _response {
+    my $self     = shift;
+    my $wheel_id = shift;
+    my $input    = shift;
+    my $player = $self->universe->players->{$wheel_id};
+
+    return $player->input_state->[0]->run($player, $input);
+}
+
 # Handle client input.
 sub mud_client_input {
     my ($self) = @_;
     my ($input, $wheel_id) = @_[ARG0, ARG1];
     my $player = $self->universe->players->{$wheel_id};
     $input =~ s/[\r\n]*$//;
-    $_[HEAP]{client}{$wheel_id}->put(
-        $player->input_state->[0]->run($player, $input)
-    );
+    $_[HEAP]{client}{$wheel_id}->put($self->_response($wheel_id, $input));
 };
 
 # Handle client error, including disconnect.
