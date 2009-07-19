@@ -116,6 +116,7 @@ sub mud_client_error {
     my ($self) = @_;
     my $wheel_id = $_[ARG3];
     delete $_[HEAP]{client}{$wheel_id};
+    $self->mud_message("Disconnection [%d] :(", $wheel_id);
 };
 
 event START            => \&mud_start;
