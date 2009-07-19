@@ -179,4 +179,7 @@ that you have a MUD::Player subclass:
 
 =cut
 
+no Moose;
+__PACKAGE__->meta->make_immutable;
+
 1;
