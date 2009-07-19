@@ -40,6 +40,13 @@ has universe => (
     default => sub { MUD::Universe->new }
 );
 
+sub mud_message {
+    return unless $ENV{'MUD_DEBUG'} > 0;
+    my $self = shift;
+    my $msg = shift;
+    print STDERR sprintf("\e[0;33m[MUD]\e[m ${msg}\n", @_);
+}
+
 # sub that can be overridden so the user can use their own
 # MUD::Player super-class
 sub spawn_player {
@@ -71,7 +78,7 @@ sub mud_client_accept {
     );
     $_[HEAP]{client}{ $io_wheel->ID() } = $io_wheel;
     my $id = $io_wheel->ID();
-    printf STDERR "Connection [%d] :)\n", $id;
+    $self->mud_message("Connection [%d] :)", $id);
     $self->universe->players->{$id} = $self->spawn_player($id, $self->universe);
     $self->universe->players->{$id}->io($io_wheel);
     $_[HEAP]{client}{$id}->put($self->welcome_message);
@@ -81,7 +88,7 @@ sub mud_client_accept {
 sub mud_server_error {
     my ($self) = @_;
     my ($operation, $errnum, $errstr) = @_[ARG0, ARG1, ARG2];
-    warn "Server $operation error $errnum: $errstr\n";
+    $self->mud_message("Server $operation error $errnum: $errstr\n");
     delete $_[HEAP]{server};
 };
 
