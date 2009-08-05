@@ -40,6 +40,18 @@ has universe => (
     default => sub { MUD::Universe->new }
 );
 
+has rw_set => (
+    is => 'rw',
+    isa => 'HashRef[Int]',
+    default => sub { +{} },
+);
+
+has socketfactory => (
+    is => 'rw',
+    isa => 'POE::Wheel::SocketFactory',
+    lazy_build => 1,
+);
+
 sub mud_message {
     return unless $ENV{'MUD_DEBUG'} > 0;
     my $self = shift;
@@ -57,13 +69,15 @@ sub spawn_player {
 # Start the server.
 sub mud_start {
     my ($self) = @_;
-    $_[HEAP]{server} = POE::Wheel::SocketFactory->new(
-        BindPort => $self->port,
-        SuccessEvent => "on_client_accept",
-        FailureEvent => "on_server_error",
-        Reuse        => 'yes',
+    $self->socketfactory(
+        POE::Wheel::SocketFactory->new(
+            BindPort => $self->port,
+            SuccessEvent => "on_client_accept",
+            FailureEvent => "on_server_error",
+            Reuse        => 'yes',
+        )
     );
-};
+}
 
 # Begin interacting with the client.
 sub mud_client_accept {
@@ -76,21 +90,20 @@ sub mud_client_accept {
         InputEvent => "on_client_input",
         ErrorEvent => "on_client_error",
     );
-    $_[HEAP]{client}{ $io_wheel->ID() } = $io_wheel;
+    $self->rw_set->{$io_wheel->ID} = $io_wheel;
     my $id = $io_wheel->ID();
     $self->mud_message("Connection [%d] :)", $id);
     $self->universe->players->{$id} = $self->spawn_player($id, $self->universe);
     $self->universe->players->{$id}->io($io_wheel);
-    $_[HEAP]{client}{$id}->put($self->welcome_message);
-};
+    $self->rw_set->{$id}->put($self->welcome_message);
+}
 
 # Shut down server.
 sub mud_server_error {
     my ($self) = @_;
     my ($operation, $errnum, $errstr) = @_[ARG0, ARG1, ARG2];
     $self->mud_message("Server $operation error $errnum: $errstr\n");
-    delete $_[HEAP]{server};
-};
+}
 
 sub _response {
     my $self     = shift;
@@ -108,14 +121,14 @@ sub mud_client_input {
     my ($input, $wheel_id) = @_[ARG0, ARG1];
     my $player = $self->universe->players->{$wheel_id};
     $input =~ s/[\r\n]*$//;
-    $_[HEAP]{client}{$wheel_id}->put($self->_response($wheel_id, $input));
+    $self->rw_set->{$wheel_id}->put($self->_response($wheel_id, $input));
 };
 
 # Handle client error, including disconnect.
 sub mud_client_error {
     my ($self) = @_;
     my $wheel_id = $_[ARG3];
-    delete $_[HEAP]{client}{$wheel_id};
+    delete $self->rw_set->{$wheel_id};
     $self->mud_message("Disconnection [%d] :(", $wheel_id);
 };
 
