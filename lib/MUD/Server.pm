@@ -16,12 +16,6 @@ has port => (
     default => 6715
 );
 
-#has connections => (
-#    is      => 'rw',
-#    isa     => 'HashRef[MUD::Player]',
-#    default => sub { +{} }
-#);
-
 has starting_state => (
     is       => 'rw',
     isa      => 'MUD::Input::State',
