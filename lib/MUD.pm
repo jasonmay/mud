@@ -1,5 +1,23 @@
 #!perl
 package MUD;
+use Moose;
+use namespace::autoclean;
+
+has server => (
+    is       => 'rw',
+    isa      => 'MUD::Server',
+    required => 1,
+    handles  => [ qw(run) ],
+);
+
+has universe => (
+    is  => 'rw',
+    isa => 'MUD::Universe',
+);
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -42,5 +60,4 @@ Jason May <jason dot a dot may at gmail dot com>
 
 =cut
 
-1;
 

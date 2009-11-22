@@ -19,19 +19,13 @@ has port => (
 has starting_state => (
     is       => 'rw',
     isa      => 'MUD::Input::State',
-    required => 1
+#    required => 1
 );
 
 has welcome_message => (
     is      => 'rw',
     isa     => 'Str',
     default => 'Enter your name: '
-);
-
-has universe => (
-    is => 'rw',
-    isa => 'MUD::Universe',
-    default => sub { MUD::Universe->new }
 );
 
 has rw_set => (
@@ -46,18 +40,17 @@ has socketfactory => (
     lazy_build => 1,
 );
 
+has universe => (
+    is => 'rw',
+    isa => 'MUD::Universe',
+    required => 1,
+);
+
 sub mud_message {
-    return unless $ENV{'MUD_DEBUG'} > 0;
+    return unless $ENV{MUD_DEBUG} && $ENV{MUD_DEBUG} > 0;
     my $self = shift;
     my $msg = shift;
     print STDERR sprintf("\e[0;33m[MUD]\e[m ${msg}\n", @_);
-}
-
-# sub that can be overridden so the user can use their own
-# MUD::Player super-class
-sub spawn_player {
-    my $self = shift;
-    return MUD::Player->new(input_state => [$self->starting_state]);
 }
 
 # Start the server.
@@ -87,8 +80,10 @@ sub mud_client_accept {
     $self->rw_set->{$io_wheel->ID} = $io_wheel;
     my $id = $io_wheel->ID();
     $self->mud_message("Connection [%d] :)", $id);
-    $self->universe->players->{$id} = $self->spawn_player($id, $self->universe);
+
+    $self->universe->players->{$id} = $self->universe->spawn_player($id);
     $self->universe->players->{$id}->io($io_wheel);
+
     $self->rw_set->{$id}->put($self->welcome_message);
 }
 
