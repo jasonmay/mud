@@ -3,6 +3,7 @@ package MUD::Server;
 use IO::Socket;
 use POE qw(Wheel::SocketFactory Wheel::ReadWrite Filter::Stream Driver::SysRW);
 use MooseX::POE;
+use namespace::autoclean;
 use MUD::Player;
 use MUD::Input::State;
 use MUD::Universe;
@@ -181,7 +182,6 @@ that you have a MUD::Player subclass:
 
 =cut
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

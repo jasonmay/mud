@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 package MUD::Universe;
 use Moose;
+use namespace::autoclean;
 use MUD::Player;
 
 has players => (
@@ -22,6 +23,8 @@ sub spawn_player {
     my $player = $self->spawn_player_code->($self, @_);
     return $player;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 

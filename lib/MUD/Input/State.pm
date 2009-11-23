@@ -9,6 +9,8 @@ has 'universe' => (
     isa      => 'MUD::Universe',
 );
 
+__PACKAGE__->meta->make_immutable;
+
 =head1 NAME
 
 MUD::Input::State - base class of where the player I/O fun happens
