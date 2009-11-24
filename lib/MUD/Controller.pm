@@ -52,21 +52,25 @@ sub mud_message {
 # start the server
 sub _mud_start {
     my ($self) = @_;
-    POE::Component::Server::TCP->new(
+    POE::Component::Client::TCP->new(
         RemoteAddress   => $self->host,
         RemotePort      => $self->port,
-        Connected       => 'mud_client_connect',
-        ServerInput     => 'mud_client_input',
+        Connected       => sub { _mud_client_connect($self) },
+        ServerInput     => sub { _mud_client_input($self) },
     )
 }
 
 # handle client input
-sub mud_client_input {
+sub _mud_client_connect {
+    warn "Connected";
+};
+
+# handle client input
+sub _mud_client_input {
     my ($self) = @_;
     my ($input) = $_[ARG0];
-    my $player = $self->universe->players->{$wheel_id};
     $input =~ s/[\r\n]*$//;
-    $_[HEAP]->{server}->put($self->parse_json($input);
+    $_[HEAP]->{server}->put($self->parse_json($input));
 };
 
 sub parse_json {
@@ -82,10 +86,10 @@ sub parse_json {
 }
 
 event START              => \&_mud_start;
-event mud_client_connect => \&_mud_client_connect;
-event mud_server_error   => \&_mud_server_error;
+#event mud_client_connect => \&_mud_client_connect;
+#event mud_server_error   => \&_mud_server_error;
 event mud_client_input   => \&_mud_client_input;
-event mud_client_error   => \&_mud_client_error;
+#event mud_client_error   => \&_mud_client_error;
 
 sub run {
     my $self = shift;
