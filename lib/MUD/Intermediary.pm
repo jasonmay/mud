@@ -62,19 +62,26 @@ sub _player_client_accept {
         InputEvent => 'player_client_input',
         ErrorEvent => 'player_client_error',
     );
-    $self->rw_set->{$rw->ID} = $rw;
+
+    my $wheel_id = $rw->ID;
+    $self->rw_set->{$wheel_id} = $rw;
+    warn "[player] ($wheel_id) connect";
 }
 
 #TODO clean shutdown etc
 sub _player_server_error {
     my ($self) = @_;
+    my ($operation, $errnum, $errstr) = @_[ARG0, ARG1, ARG2];
+    warn "[SERVER] $operation error $errnum: $errstr";
 }
 
 sub _player_client_input {
     my ($self)             = @_;
     my ($input, $wheel_id) = @_[ARG0, ARG1];
-    chomp($input);
+    $input =~ s/[\r\n]*$//;
+
     $self->rw_set->{$wheel_id}->put(join('', sort split '', $input) . "\n");
+    warn "[player] ($wheel_id) got input: $input";
 }
 
 #TODO let abermud know
@@ -82,22 +89,25 @@ sub _player_client_error {
     my ($self)   = @_;
     my $wheel_id = $_[ARG3];
     delete $self->rw_set->{$wheel_id};
+    warn "[player] ($wheel_id) disconnect";
 }
 
 sub _controller_client_accept {
     my ($self)   = @_;
-    warn "controller connected";
+    warn "[controller] connect";
 }
 
 sub _controller_server_error {
     my ($self)   = @_;
-    warn "controller disconnected";
+    warn "[controller] disconnect";
 }
 
 sub _controller_client_input {
     my ($self)  = @_;
     my $input = $_[ARG0];
+    chomp($input);
     $_[HEAP]->{client}->put("wheee\n");
+    warn "[controller] got input: $input";
 }
 
 sub run {
