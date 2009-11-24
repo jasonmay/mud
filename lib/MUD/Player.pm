@@ -14,14 +14,10 @@ has input_state => (
     default => sub { [] },
 );
 
-has io => (
-    is      => 'rw',
-    isa     => 'POE::Wheel::ReadWrite',
-);
-
+# TODO
 sub disconnect {
     my $self = shift;
-    $self->io->shutdown_output;
+    #$self->send(
 }
 
 =head1 NAME
