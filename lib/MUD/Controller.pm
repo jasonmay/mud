@@ -1,7 +1,7 @@
 #!perl
 package MUD::Controller;
 use IO::Socket;
-use POE qw(Component::Client::TCP);
+use POE qw(Component::Client::TCP Wheel::ReadWrite);
 use MooseX::POE;
 use namespace::autoclean;
 use MUD::Player;
@@ -55,8 +55,8 @@ sub _mud_start {
     POE::Component::Client::TCP->new(
         RemoteAddress   => $self->host,
         RemotePort      => $self->port,
-        Connected       => sub { _mud_client_connect($self) },
-        ServerInput     => sub { _mud_client_input($self) },
+        Connected       => sub { _mud_client_connect($self, @_) },
+        ServerInput     => sub { _mud_client_input($self, @_) },
     )
 }
 
@@ -67,22 +67,16 @@ sub _mud_client_connect {
 
 # handle client input
 sub _mud_client_input {
-    my ($self) = @_;
+    my $self = shift;
     my ($input) = $_[ARG0];
     $input =~ s/[\r\n]*$//;
-    $_[HEAP]->{server}->put($self->parse_json($input));
+    $_[HEAP]{server}->put($self->parse_json($input));
 };
 
 sub parse_json {
-    return to_json(
-        {
-            output => 'hai',
-            updates => {
-                foo => 1,
-                bar => 2
-            }
-        }
-    );
+    my $json = shift;
+    my $data = from_json($json);
+    return to_json({output => 'bop', socket => $data->{data}->{id}});
 }
 
 event START              => \&_mud_start;

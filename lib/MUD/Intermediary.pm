@@ -4,6 +4,7 @@ use MooseX::POE;
 use namespace::autoclean;
 
 use JSON;
+use List::MoreUtils qw(any);
 
 use POE qw(
     Wheel::SocketFactory
@@ -27,6 +28,11 @@ has player_port => (
     is  => 'ro',
     isa => 'Int',
     default => 6715
+);
+
+has controller_socket => (
+    is      => 'rw',
+    isa     => 'POE::Wheel::ReadWrite',
 );
 
 has controller_port => (
@@ -60,9 +66,9 @@ sub _player_start {
 
     POE::Component::Server::TCP->new(
         Port               => $self->controller_port,
-        ClientConnected    => sub { _controller_client_accept($self) },
-        ClientDisconnected => sub { _controller_server_error($self)  },
-        ClientInput        => sub { _controller_client_input($self)  },
+        ClientConnected    => sub { _controller_client_accept($self, @_) },
+        ClientDisconnected => sub { _controller_server_error($self, @_)  },
+        ClientInput        => sub { _controller_client_input($self, @_)  },
     )
 }
 
@@ -95,8 +101,17 @@ sub _player_client_input {
     my ($input, $wheel_id) = @_[ARG0, ARG1];
     $input =~ s/[\r\n]*$//;
 
-    $self->rw_set->{$wheel_id}->put(join('', sort split '', $input) . "\n");
     warn "[player] ($wheel_id) got input: $input";
+
+    $self->send_to_controller(
+        {
+            param => 'input',
+            data => {
+                id    => $wheel_id,
+                value => $input,
+            }
+        }
+    );
 }
 
 #TODO let abermud know
@@ -105,9 +120,7 @@ sub _player_client_error {
     my $wheel_id = $_[ARG3];
     delete $self->rw_set->{$wheel_id};
     warn "[player] ($wheel_id) disconnect";
-    $self->rw_set->{$wheel_id}->put(
-        to_json({param => 'disconnect', data => $wheel_id})
-        );
+    $self->send_to_controller({param => 'disconnect', data => $wheel_id});
 }
 
 #TODO send backup info
@@ -116,14 +129,15 @@ sub _controller_client_accept {
     warn "[controller] connect";
 
     if ( scalar(%{$self->rw_set}) ) {
-        $_[HEAP]->{server}->put( to_json({param => 'restore', data => }) );
+        #$_[HEAP]->{client}->put( to_json({param => 'restore',}) );
     }
+    $self->controller_socket($_[HEAP]->{client});
 }
 
 sub _controller_server_error {
     my $self = shift;
     warn "[controller] disconnect";
-    $_->put("The MUD will be back up shortly.") for @{$self->rw_set};
+    $_->put("The MUD will be back up shortly.") for values %{$self->rw_set||{}};
 }
 
 sub _controller_client_input {
@@ -149,6 +163,22 @@ sub _controller_client_input {
         }
     }
 }
+
+sub send {
+    my $self = shift;
+    my $id = shift;
+    my $data = shift;
+
+    $self->rw_set->{$id}->put(to_json($data));
+}
+
+sub send_to_controller {
+    my $self   = shift;
+    my $data   = shift;
+
+    $self->controller_socket->put(to_json($data));
+}
+
 
 sub run {
     my $self = shift;
