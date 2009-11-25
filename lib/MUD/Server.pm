@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-package MUD::Intermediary;
+package MUD::Server;
 use MooseX::POE;
 use namespace::autoclean;
 
