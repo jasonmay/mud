@@ -61,28 +61,28 @@ sub _mud_start {
     POE::Component::Client::TCP->new(
         RemoteAddress   => $self->host,
         RemotePort      => $self->port,
-        Connected       => sub { _mud_client_connect($self,    @_) },
-        Disconnected    => sub { _mud_client_disconnect($self, @_) },
-        ServerInput     => sub { _mud_client_input($self,      @_) },
+        Connected       => sub { _server_connect($self,    @_) },
+        Disconnected    => sub { _server_disconnect($self, @_) },
+        ServerInput     => sub { _server_input($self,      @_) },
     )
 }
 
 # handle client input
-sub _mud_client_connect {
+sub _server_connect {
     my $self = shift;
     $self->mud_message("Connected");
     $self->socket($_[HEAP]{server});
 };
 
 # handle client input
-sub _mud_client_disconnect {
+sub _server_disconnect {
     my $self = shift;
     $self->socket(undef);
     delete $_[HEAP]{server};
 };
 
 # handle client input
-sub _mud_client_input {
+sub _server_input {
     my $self = shift;
     my ($input) = $_[ARG0];
     $input =~ s/[\r\n]*$//;
@@ -91,10 +91,10 @@ sub _mud_client_input {
 };
 
 sub _response {
-    my $self = shift;
+    my $self     = shift;
     my $wheel_id = shift;
-    my $input = shift;
-    my $player = $self->universe->players->{$wheel_id};
+    my $input    = shift;
+    my $player   = $self->universe->players->{$wheel_id};
 
     return '' unless @{$player->input_state};
     return $player->input_state->[0]->run($player, $input);
