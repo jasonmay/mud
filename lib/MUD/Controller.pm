@@ -8,8 +8,14 @@ use MUD::Player;
 use MUD::Input::State;
 use MUD::Universe;
 use JSON;
+use DDS;
 
 local $| = 1;
+
+has socket => (
+    is       => 'rw',
+    isa      => 'POE::Wheel::ReadWrite',
+);
 
 has host => (
     is      => 'ro',
@@ -55,14 +61,24 @@ sub _mud_start {
     POE::Component::Client::TCP->new(
         RemoteAddress   => $self->host,
         RemotePort      => $self->port,
-        Connected       => sub { _mud_client_connect($self, @_) },
-        ServerInput     => sub { _mud_client_input($self, @_) },
+        Connected       => sub { _mud_client_connect($self,    @_) },
+        Disconnected    => sub { _mud_client_disconnect($self, @_) },
+        ServerInput     => sub { _mud_client_input($self,      @_) },
     )
 }
 
 # handle client input
 sub _mud_client_connect {
-    warn "Connected";
+    my $self = shift;
+    $self->mud_message("Connected");
+    $self->socket($_[HEAP]{server});
+};
+
+# handle client input
+sub _mud_client_disconnect {
+    my $self = shift;
+    $self->socket(undef);
+    delete $_[HEAP]{server};
 };
 
 # handle client input
@@ -71,19 +87,91 @@ sub _mud_client_input {
     my ($input) = $_[ARG0];
     $input =~ s/[\r\n]*$//;
     $_[HEAP]{server}->put($self->parse_json($input));
+
 };
 
-sub parse_json {
-    my $json = shift;
-    my $data = from_json($json);
-    return to_json({output => 'bop', socket => $data->{data}->{id}});
+sub _response {
+    my $self = shift;
+    my $wheel_id = shift;
+    my $input = shift;
+    my $player = $self->universe->players->{$wheel_id};
+
+    return '' unless @{$player->input_state};
+    return $player->input_state->[0]->run($player, $input);
 }
 
-event START              => \&_mud_start;
-#event mud_client_connect => \&_mud_client_connect;
-#event mud_server_error   => \&_mud_server_error;
-event mud_client_input   => \&_mud_client_input;
-#event mud_client_error   => \&_mud_client_error;
+sub perform_connect_action {
+    my $self   = shift;
+    my $data   = shift;
+
+    my $id = $data->{data}->{id};
+    my $player = $self->universe->players->{$id}
+                = $self->universe->spawn_player($id);
+
+    return to_json({param => 'null'});
+}
+
+sub perform_input_action {
+    my $self   = shift;
+    my $data   = shift;
+
+    return to_json(
+        {
+            param => 'output',
+            data => {
+                value => $self->_response(
+                    $data->{data}->{id},
+                    $data->{data}->{value}
+                ),
+                id => $data->{data}->{id},
+            }
+        }
+    );
+}
+
+sub perform_disconnect_action {
+    my $self   = shift;
+    my $data   = shift;
+
+    delete $self->universe->players->{ $data->{data}->{id} };
+    return to_json({param => 'null'});
+}
+
+sub parse_json {
+    my $self = shift;
+    my $json = shift;
+    my $data = eval { from_json($json) };
+
+    if ($@) { warn $@; return }
+
+    my %actions = (
+        'connect'   => sub { $self->perform_connect_action($data)    },
+        'input'     => sub { $self->perform_input_action($data)      },
+        'disconect' => sub { $self->perform_disconnect_action($data) },
+    );
+
+    return $actions{ $data->{param} }->()
+        if exists $actions{ $data->{param} };
+
+    return to_json({param => 'null'});
+}
+
+sub send {
+    my $self = shift;
+    my ($id, $message) = @_;
+
+    $self->socket->put(to_json(
+        {
+            param => 'output',
+            data => {
+                value => $message,
+                id => $id,
+            }
+        }
+    ));
+}
+
+event START => \&_mud_start;
 
 sub run {
     my $self = shift;
@@ -101,6 +189,8 @@ MUD::Controller - controls the MUD
   MUD::Controller->new(starting_state => $starting_state);
 
 =head1 DESCRIPTION
+
+XXX THESE DOCS ARE OUTDATED
 
 MUD::Controller is the class you run in order for your MUD to
 run. It can be subclassed to override a few methods:

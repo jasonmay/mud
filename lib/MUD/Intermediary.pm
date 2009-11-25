@@ -5,6 +5,7 @@ use namespace::autoclean;
 
 use JSON;
 use List::MoreUtils qw(any);
+use DDS;
 
 use POE qw(
     Wheel::SocketFactory
@@ -72,6 +73,17 @@ sub _player_start {
     )
 }
 
+#TODO send backup info
+sub _controller_client_accept {
+    my $self = shift;
+    warn "[controller] connect";
+
+    if ( scalar(%{$self->rw_set}) ) {
+        #$_[HEAP]->{client}->put( to_json({param => 'restore',}) );
+    }
+    $self->controller_socket($_[HEAP]->{client});
+}
+
 sub _player_client_accept {
     my ($self) = @_;
     my $socket = $_[ARG0];
@@ -86,14 +98,15 @@ sub _player_client_accept {
     my $wheel_id = $rw->ID;
     $self->rw_set->{$wheel_id} = $rw;
     warn "[player] ($wheel_id) connect";
-    $rw->put("Hey.\n");
-}
 
-#TODO clean shutdown etc
-sub _player_server_error {
-    my ($self) = @_;
-    my ($operation, $errnum, $errstr) = @_[ARG0, ARG1, ARG2];
-    warn "[SERVER] $operation error $errnum: $errstr";
+    $self->send_to_controller(
+        {
+            param => 'connect',
+            data  => {
+                id    => $wheel_id,
+            }
+        }
+    );
 }
 
 sub _player_client_input {
@@ -114,6 +127,40 @@ sub _player_client_input {
     );
 }
 
+sub _controller_client_input {
+    my $self = shift;
+    my $input = $_[ARG0];
+    chomp($input);
+    #warn $input;
+    my $json = eval { from_json($input) };
+
+    {
+        if ($@ || !$json) {
+            warn "JSON error: $@";
+        }
+        elsif (!exists $json->{param}) {
+            warn "Invalid JSON structure!";
+        }
+        else {
+            warn Dump($json);
+            last unless $json->{data}->{id};
+            last unless $json->{param};
+            last unless $self->rw_set->{ $json->{data}->{id} };
+
+            if ($json->{param} eq 'output') {
+                $self->rw_set->{ $json->{data}->{id} }->put( $json->{data}->{value} );
+                if ($json->{updates}) {
+                    foreach my $key  (%{ $json->{updates} }) {
+                        my $value = $json->{updates}->{$key};
+                        $self->socket_info->{ $json->{id} }->{ $key } = $value
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 #TODO let abermud know
 sub _player_client_error {
     my ($self)   = @_;
@@ -123,15 +170,11 @@ sub _player_client_error {
     $self->send_to_controller({param => 'disconnect', data => $wheel_id});
 }
 
-#TODO send backup info
-sub _controller_client_accept {
-    my $self = shift;
-    warn "[controller] connect";
-
-    if ( scalar(%{$self->rw_set}) ) {
-        #$_[HEAP]->{client}->put( to_json({param => 'restore',}) );
-    }
-    $self->controller_socket($_[HEAP]->{client});
+#TODO clean shutdown etc
+sub _player_server_error {
+    my ($self) = @_;
+    my ($operation, $errnum, $errstr) = @_[ARG0, ARG1, ARG2];
+    warn "[SERVER] $operation error $errnum: $errstr";
 }
 
 sub _controller_server_error {
@@ -140,29 +183,6 @@ sub _controller_server_error {
     $_->put("The MUD will be back up shortly.") for values %{$self->rw_set||{}};
 }
 
-sub _controller_client_input {
-    my $self = shift;
-    my $input = $_[ARG0];
-    chomp($input);
-    warn "[controller] got input: $input";
-    my $json = eval { from_json($input) };
-
-    if ($@) {
-        warn "JSON error: $@";
-    }
-    elsif ( any { !exists($json->{$_}) } qw(output socket) ) {
-        warn "Invalid JSON structure!";
-    }
-    else {
-        $self->rw_set->{ $json->{id} }->put( $json->{output} );
-        if ($json->{updates}) {
-            foreach my $key  (%{ $json->{updates} }) {
-                my $value = $json->{updates}->{$key};
-                $self->socket_info->{ $json->{id} }->{ $key } = $value
-            }
-        }
-    }
-}
 
 sub send {
     my $self = shift;
