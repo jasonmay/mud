@@ -8,6 +8,7 @@ use MUD::Player;
 use MUD::Input::State;
 use MUD::Universe;
 use JSON;
+use Carp;
 use DDS;
 
 local $| = 1;
@@ -15,6 +16,7 @@ local $| = 1;
 has socket => (
     is       => 'rw',
     isa      => 'POE::Wheel::ReadWrite',
+    clearer  => 'clear_socket',
 );
 
 has host => (
@@ -71,7 +73,7 @@ sub _server_connect {
 # handle client input
 sub _server_disconnect {
     my $self = shift;
-    $self->socket(undef);
+    $self->clear_socket;
     delete $_[HEAP]{server};
 };
 
@@ -81,7 +83,6 @@ sub _server_input {
     my ($input) = $_[ARG0];
     $input =~ s/[\r\n]*$//;
     $_[HEAP]{server}->put($self->parse_json($input));
-
 };
 
 sub _response {
@@ -89,6 +90,11 @@ sub _response {
     my $wheel_id = shift;
     my $input    = shift;
     my $player   = $self->universe->players->{$wheel_id};
+
+    if (!$player) {
+        warn "Attempt to get response from non-existent player";
+        return '';
+    }
 
     return '' unless @{$player->input_state};
     return $player->input_state->[0]->run($player, $input);
@@ -98,6 +104,7 @@ sub perform_connect_action {
     my $self   = shift;
     my $data   = shift;
 
+    warn "perform_connect_action";
     my $id = $data->{data}->{id};
     my $player = $self->universe->players->{$id}
                 = $self->universe->spawn_player($id);
@@ -109,6 +116,7 @@ sub perform_input_action {
     my $self   = shift;
     my $data   = shift;
 
+    warn "perform_input_action";
     return to_json(
         {
             param => 'output',
@@ -127,8 +135,19 @@ sub perform_disconnect_action {
     my $self   = shift;
     my $data   = shift;
 
-    delete $self->universe->players->{ $data->{data}->{id} };
-    return to_json({param => 'null'});
+    warn "perform_disconnect_action";
+    warn Dump($data);
+    my $player = $self->universe->players->{ $data->{data}->{id} };
+    delete $self->universe->players->{         $data->{data}->{id} };
+    delete $self->universe->players_in_game->{$player->name};
+    return to_json(
+        {
+            param => 'disconnect',
+            data  => {
+                success => 1,
+            },
+        }
+    );
 }
 
 sub parse_json {
@@ -141,13 +160,27 @@ sub parse_json {
     my %actions = (
         'connect'   => sub { $self->perform_connect_action($data)    },
         'input'     => sub { $self->perform_input_action($data)      },
-        'disconect' => sub { $self->perform_disconnect_action($data) },
+        'disconnect' => sub { $self->perform_disconnect_action($data) },
     );
 
     return $actions{ $data->{param} }->()
         if exists $actions{ $data->{param} };
 
     return to_json({param => 'null'});
+}
+
+sub force_disconnect {
+    my $self = shift;
+    my $id = shift;
+
+    $self->socket->put(to_json(
+        {
+            param => 'disconnect',
+            data => {
+                id => $id,
+            }
+        }
+    ));
 }
 
 sub send {

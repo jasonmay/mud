@@ -78,10 +78,20 @@ sub _controller_client_accept {
     my $self = shift;
     warn "[controller] connect";
 
-    if ( scalar(%{$self->rw_set}) ) {
-        #$_[HEAP]->{client}->put( to_json({param => 'restore',}) );
-    }
     $self->controller_socket($_[HEAP]->{client});
+
+    if ( scalar(%{$self->rw_set}) ) {
+        foreach my $id (keys %{ $self->rw_set }) {
+            $self->send_to_controller(
+                {
+                    param => 'connect',
+                    data  => {
+                        id    => $id,
+                    }
+                }
+            );
+        }
+    }
 }
 
 sub _player_client_accept {
@@ -131,7 +141,6 @@ sub _controller_client_input {
     my $self = shift;
     my $input = $_[ARG0];
     chomp($input);
-    #warn $input;
     my $json = eval { from_json($input) };
 
     {
@@ -142,9 +151,8 @@ sub _controller_client_input {
             warn "Invalid JSON structure!";
         }
         else {
-            warn Dump($json);
             last unless $json->{data}->{id};
-            last unless $json->{param};
+            last unless ref($self->rw_set);
             last unless $self->rw_set->{ $json->{data}->{id} };
 
             if ($json->{param} eq 'output') {
@@ -152,9 +160,13 @@ sub _controller_client_input {
                 if ($json->{updates}) {
                     foreach my $key  (%{ $json->{updates} }) {
                         my $value = $json->{updates}->{$key};
-                        $self->socket_info->{ $json->{id} }->{ $key } = $value
+                        $self->socket_info->{ $json->{data}->{id} }->{ $key } = $value
                     }
                 }
+            }
+            elsif ($json->{param} eq 'disconnect') {
+                warn "DISCONTNERNFVKJD!";
+                $self->rw_set->{id}->shutdown_output;
             }
         }
     }
@@ -167,7 +179,14 @@ sub _player_client_error {
     my $wheel_id = $_[ARG3];
     delete $self->rw_set->{$wheel_id};
     warn "[player] ($wheel_id) disconnect";
-    $self->send_to_controller({param => 'disconnect', data => $wheel_id});
+    $self->send_to_controller(
+        {
+            param => 'disconnect',
+            data => {
+                id => $wheel_id,
+            }
+        }
+    );
 }
 
 #TODO clean shutdown etc
@@ -180,7 +199,7 @@ sub _player_server_error {
 sub _controller_server_error {
     my $self = shift;
     warn "[controller] disconnect";
-    $_->put("The MUD will be back up shortly.") for values %{$self->rw_set||{}};
+    $_->put("Hold tight!\nThe MUD will be back up shortly.\n") for values %{$self->rw_set||{}};
 }
 
 
@@ -196,6 +215,7 @@ sub send_to_controller {
     my $self   = shift;
     my $data   = shift;
 
+    do { warn Dump($data) ; return } unless defined $self->controller_socket;
     $self->controller_socket->put(to_json($data));
 }
 
