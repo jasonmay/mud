@@ -36,12 +36,6 @@ has starting_state => (
     isa      => 'MUD::Input::State',
 );
 
-has welcome_message => (
-    is      => 'rw',
-    isa     => 'Str',
-    default => 'Enter your name: '
-);
-
 has universe => (
     is => 'rw',
     isa => 'MUD::Universe',
