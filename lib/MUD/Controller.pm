@@ -135,7 +135,8 @@ sub perform_disconnect_action {
     my $self   = shift;
     my $data   = shift;
 
-    my $player = delete $self->universe->players->{ $data->{data}->{id} };
+    my $id = $data->{data}->{id};
+    my $player = delete $self->universe->players->{$id};
 
     return to_json(
         {
@@ -163,18 +164,21 @@ sub parse_json {
     return $actions{ $data->{param} }->()
         if exists $actions{ $data->{param} };
 
+
     return to_json({param => 'null'});
 }
 
 sub force_disconnect {
     my $self = shift;
     my $id = shift;
+    my %args = @_;
 
     $self->socket->put(to_json(
         {
             param => 'disconnect',
             data => {
                 id => $id,
+                %args,
             }
         }
     ));
