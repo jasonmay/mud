@@ -135,11 +135,8 @@ sub perform_disconnect_action {
     my $self   = shift;
     my $data   = shift;
 
-    warn "perform_disconnect_action";
-    warn Dump($data);
-    my $player = $self->universe->players->{ $data->{data}->{id} };
-    delete $self->universe->players->{         $data->{data}->{id} };
-    delete $self->universe->players_in_game->{$player->name};
+    my $player = delete $self->universe->players->{ $data->{data}->{id} };
+
     return to_json(
         {
             param => 'disconnect',

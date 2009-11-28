@@ -165,8 +165,8 @@ sub _controller_client_input {
                 }
             }
             elsif ($json->{param} eq 'disconnect') {
-                warn "DISCONTNERNFVKJD!";
-                $self->rw_set->{id}->shutdown_output;
+                #warn "$json->{data}->{id} is disconnecting.";
+                $self->rw_set->{$json->{data}->{id}}->shutdown_output;
             }
         }
     }
