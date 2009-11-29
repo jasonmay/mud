@@ -17,7 +17,11 @@ has input_state => (
 # TODO
 sub disconnect {
     my $self = shift;
-    #$self->send(
+    my %args = @_;
+
+    return unless $self->id;
+
+    $self->universe->_controller->force_disconnect($self->id, @_);
 }
 
 =head1 NAME
