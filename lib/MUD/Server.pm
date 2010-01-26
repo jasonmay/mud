@@ -5,6 +5,7 @@ use namespace::autoclean;
 
 use JSON;
 use List::MoreUtils qw(any);
+use Scalar::Util qw(reftype);
 use DDS;
 
 use POE qw(
@@ -67,10 +68,10 @@ sub _player_start {
 
     POE::Component::Server::TCP->new(
         Port               => $self->controller_port,
-        ClientConnected    => sub { _controller_client_accept($self, @_) },
-        ClientDisconnected => sub { _controller_server_error($self, @_)  },
-        ClientInput        => sub { _controller_client_input($self, @_)  },
-    )
+        ClientConnected    => sub { $self->_controller_client_accept(@_) },
+        ClientDisconnected => sub { $self->_controller_server_error(@_)  },
+        ClientInput        => sub { $self->_controller_client_input(@_)  },
+    );
 }
 
 #TODO send backup info
@@ -152,7 +153,7 @@ sub _controller_client_input {
         }
         else {
             last unless $json->{data}->{id};
-            last unless ref($self->rw_set);
+            last unless reftype($self->rw_set);
             last unless $self->rw_set->{ $json->{data}->{id} };
 
             if ($json->{param} eq 'output') {
@@ -215,7 +216,7 @@ sub send_to_controller {
     my $self   = shift;
     my $data   = shift;
 
-    do { warn Dump($data) ; return } unless defined $self->controller_socket;
+    return unless defined $self->controller_socket;
     $self->controller_socket->put(to_json($data));
 }
 
@@ -232,9 +233,9 @@ event player_server_error  => \&_player_server_error;
 event player_client_input  => \&_player_client_input;
 event player_client_error  => \&_player_client_error;
 
-event controller_client_input   => \&_controller_client_input;
-event controller_client_accept  => \&_controller_client_accept;
-event controller_client_error   => \&_controller_client_error;
+#event controller_client_input   => \&_controller_client_input;
+##event controller_client_accept  => \&_controller_client_accept;
+#event controller_client_error   => \&_controller_client_error;
 
 __PACKAGE__->meta->make_immutable;
 

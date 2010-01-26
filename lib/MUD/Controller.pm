@@ -2,7 +2,7 @@
 package MUD::Controller;
 use IO::Socket;
 use POE qw(Component::Client::TCP Wheel::ReadWrite);
-use MooseX::POE;
+use Moose;
 use namespace::autoclean;
 use MUD::Player;
 use MUD::Input::State;
@@ -44,12 +44,19 @@ has universe => (
     required => 1,
 );
 
+sub BUILD {
+    my $self = shift;
+    $self->_mud_start;
+}
+
 sub mud_message {
     return unless $ENV{MUD_DEBUG} && $ENV{MUD_DEBUG} > 0;
     my $self = shift;
     my $msg = shift;
     print STDERR sprintf("\e[0;33m[MUD]\e[m ${msg}\n", @_);
 }
+
+sub custom_startup { }
 
 # start the server
 sub _mud_start {
@@ -60,7 +67,9 @@ sub _mud_start {
         Connected       => sub { _server_connect($self,    @_) },
         Disconnected    => sub { _server_disconnect($self, @_) },
         ServerInput     => sub { _server_input($self,      @_) },
-    )
+    );
+
+    $self->custom_startup(@_);
 }
 
 # handle client input
@@ -156,8 +165,8 @@ sub parse_json {
     if ($@) { warn $@; return }
 
     my %actions = (
-        'connect'   => sub { $self->perform_connect_action($data)    },
-        'input'     => sub { $self->perform_input_action($data)      },
+        'connect'    => sub { $self->perform_connect_action($data)    },
+        'input'      => sub { $self->perform_input_action($data)      },
         'disconnect' => sub { $self->perform_disconnect_action($data) },
     );
 
@@ -199,7 +208,6 @@ sub send {
     ));
 }
 
-event START => \&_mud_start;
 
 sub run {
     my $self = shift;
