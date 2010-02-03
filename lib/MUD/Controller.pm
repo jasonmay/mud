@@ -216,52 +216,21 @@ sub run {
 
 =head1 NAME
 
-MUD::Controller - controls the MUD
+MUD::Controller - Logic that coordinates gameplay and I/O
 
 =head1 SYNOPSIS
 
-  # see MUD::Input::State for information on input-states
-  my $starting_state = My::Input::State::Subclass->new;
-  MUD::Controller->new(starting_state => $starting_state);
+  my $controller = MUD::Controller->new(
+      universe => $universe,
+  );
 
 =head1 DESCRIPTION
 
-XXX THESE DOCS ARE OUTDATED
+The flow of the controller starts when a player sends a command.
+The controller figures out who sent the command and relays it to
+the logic that reads the command and comes up with a response (Game).
 
-MUD::Controller is the class you run in order for your MUD to
-run. It can be subclassed to override a few methods:
-
-=over
-
-=item *
-
-spawn_player
-
-This method originally looks like this:
-
-  sub spawn_player {
-      my $self = shift;
-      return MUD::Player->new(
-          input_state => [$self->starting_state]
-      );
-  }
-
-The reason you would override this is to let the server know
-that you have a MUD::Player subclass:
-
-  package MyMUD::Controller;
-  use base 'MUD::Controller';
-
-  sub spawn_player {
-      my $self = shift;
-      return MyMUD::Player->new(
-          input_state => [$self->starting_state]
-      );
-  }
-
-  ...
-
-=back
+  Server <---> Controller <---> Game
 
 =cut
 
