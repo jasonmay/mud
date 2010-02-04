@@ -58,7 +58,7 @@ for more details.
 
 =head1 AUTHOR
 
-Jason May <jason dot a dot may at gmail dot com>
+Jason May C<< <jason.a.may@gmail.com> >>
 
 =cut
 

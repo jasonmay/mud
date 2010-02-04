@@ -232,6 +232,37 @@ the logic that reads the command and comes up with a response (Game).
 
   Server <---> Controller <---> Game
 
+=head1 ATTRIBUTES
+
+=over
+
+=item host
+
+This attribute is for the host the server runs on.
+
+=item port
+
+This attribute is for the host the server runs on.
+
+=item universe
+
+This is a MUD::Universe object the controller has access to
+for actual game interaction.
+
+=back
+
+=head1 METHODS
+
+=over
+
+=item run
+
+=item custom_startup
+
+=item send
+
+=back
+
 =cut
 
 __PACKAGE__->meta->make_immutable;
