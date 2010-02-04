@@ -116,7 +116,7 @@ sub perform_connect_action {
     warn "perform_connect_action";
     my $id = $data->{data}->{id};
     my $player = $self->universe->players->{$id}
-                = $self->universe->spawn_player($id);
+                = $self->universe->spawn_player_code->($self->universe, $id);
 
     return to_json({param => 'null'});
 }
