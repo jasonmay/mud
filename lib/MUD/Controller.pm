@@ -116,7 +116,7 @@ sub perform_connect_action {
     warn "perform_connect_action";
     my $id = $data->{data}->{id};
     my $player = $self->universe->players->{$id}
-                = $self->universe->spawn_player($id);
+                = $self->universe->spawn_player_code->($self->universe, $id);
 
     return to_json({param => 'null'});
 }
@@ -216,50 +216,50 @@ sub run {
 
 =head1 NAME
 
-MUD::Controller - controls the MUD
+MUD::Controller - Logic that coordinates gameplay and I/O
 
 =head1 SYNOPSIS
 
-  # see MUD::Input::State for information on input-states
-  my $starting_state = My::Input::State::Subclass->new;
-  MUD::Controller->new(starting_state => $starting_state);
+  my $controller = MUD::Controller->new(
+      universe => $universe,
+  );
 
 =head1 DESCRIPTION
 
-XXX THESE DOCS ARE OUTDATED
+The flow of the controller starts when a player sends a command.
+The controller figures out who sent the command and relays it to
+the logic that reads the command and comes up with a response (Game).
 
-MUD::Controller is the class you run in order for your MUD to
-run. It can be subclassed to override a few methods:
+  Server <---> Controller <---> Game
+
+=head1 ATTRIBUTES
 
 =over
 
-=item *
+=item host
 
-spawn_player
+This attribute is for the host the server runs on.
 
-This method originally looks like this:
+=item port
 
-  sub spawn_player {
-      my $self = shift;
-      return MUD::Player->new(
-          input_state => [$self->starting_state]
-      );
-  }
+This attribute is for the host the server runs on.
 
-The reason you would override this is to let the server know
-that you have a MUD::Player subclass:
+=item universe
 
-  package MyMUD::Controller;
-  use base 'MUD::Controller';
+This is a MUD::Universe object the controller has access to
+for actual game interaction.
 
-  sub spawn_player {
-      my $self = shift;
-      return MyMUD::Player->new(
-          input_state => [$self->starting_state]
-      );
-  }
+=back
 
-  ...
+=head1 METHODS
+
+=over
+
+=item run
+
+=item custom_startup
+
+=item send
 
 =back
 

@@ -18,7 +18,7 @@ MUD::Input::State - base class of where the player I/O fun happens
 =head1 SYNOPSIS
 
   package MyInputState;
-  use base 'MUD::Input::State';
+  extends 'MUD::Input::State';
 
   sub run {
       my $self     = shift;

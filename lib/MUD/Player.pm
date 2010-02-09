@@ -14,7 +14,6 @@ has input_state => (
     default => sub { [] },
 );
 
-# TODO
 sub disconnect {
     my $self = shift;
     my %args = @_;
@@ -26,12 +25,16 @@ sub disconnect {
 
 =head1 NAME
 
-MUD::Player - a player XXX TODO FIXME
+MUD::Player - the player that logs in
 
-=head1 DESCRIPTION
+=head1 SYNOPSIS
 
-This class is a XXX oh shit I don't know if it's possible to override the
-player!
+  my $player = MUD::Player->new(
+      name => 'jasonmay',
+      input_state => [
+          $login_state,
+      ],
+  );
 
 =cut
 

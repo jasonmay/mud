@@ -16,15 +16,21 @@ has spawn_player_code => (
     required => 1,
 );
 
-# sub that can be overridden so the user can use their own
-# MUD::Player super-class
-sub spawn_player {
-    my $self = shift;
-    my $player = $self->spawn_player_code->($self, @_);
-    return $player;
-}
-
 __PACKAGE__->meta->make_immutable;
 
 1;
+
+__END__
+
+=head1 NAME
+
+MUD::Universe - the MUD's universe data
+
+=head1 SYNOPSIS
+
+  my $universe = MUD::Universe->new(
+      spawn_player_code => sub {
+          MUD::Player->new(...);
+      },
+  );
 
