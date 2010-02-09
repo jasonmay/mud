@@ -38,7 +38,7 @@ needs to be overridden. The superclass is used throughout
 the MUD distribution. For example, MUD::Player has an
 B<input_states> accessor. The server uses the last element
 in that list. MUD::Server also requires it for the 
-B<starting_state> paramter so the player has a state to
+B<starting_state> parameter so the player has a state to
 start out with.
 
 =head1 EXAMPLES
