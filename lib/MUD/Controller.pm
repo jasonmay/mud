@@ -32,16 +32,6 @@ sub mud_message {
     print STDERR sprintf("\e[0;33m[MUD]\e[m ${msg}\n", @_);
 }
 
-# around custom_startup => sub { };
-
-around _server_connect => sub {
-    my $orig = shift;
-    my $self = shift;
-
-    $self->mud_message("Connected");
-    return $self->$orig(@_);
-};
-
 around build_response => sub {
     my $orig     = shift;
     my $self     = shift;
@@ -73,14 +63,6 @@ around connect_hook => sub {
                = $self->universe->spawn_player_code->($self->universe, $id);
 
     return $self->$orig($data, @_);
-};
-
-around input_hook => sub {
-    my $orig   = shift;
-    my $self   = shift;
-
-    warn "perform_input_action";
-    return $self->$orig(@_);
 };
 
 around disconnect_hook => sub {
