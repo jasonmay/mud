@@ -26,6 +26,7 @@ around build_response => sub {
     my $self     = shift;
     my $wheel_id = shift;
     my $input    = shift;
+    my $txn_id   = shift;
     my $player   = $self->universe->players->{$wheel_id};
 
     if (!$player) {
@@ -37,6 +38,7 @@ around build_response => sub {
     return $player->input_state->[0]->run(
         $player,
         $self->$orig($wheel_id, $input, @_),
+        $txn_id,
     );
 };
 
@@ -47,7 +49,7 @@ around connect_hook => sub {
 
     my $id = $data->{data}->{id};
     my $player = $self->universe->players->{$id}
-                = $self->universe->spawn_player_code->($self->universe, $id);
+               = $self->universe->spawn_player_code->($self->universe, $id);
 
     return $self->$orig($data, @_);
 };

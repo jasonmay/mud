@@ -2,6 +2,7 @@
 package MUD::Player;
 use Moose;
 use MUD::Input::State;
+use Data::UUID::LibUUID;
 
 has name => (
     is  => 'rw',
@@ -16,11 +17,12 @@ has input_state => (
 
 sub disconnect {
     my $self = shift;
-    my %args = @_;
+    my $txn_id;
+    $txn_id = shift || new_uuid_string();
 
     return unless $self->id;
 
-    $self->universe->_controller->force_disconnect($self->id, @_);
+    $self->universe->_controller->force_disconnect($self->id, $txn_id, @_);
 }
 
 =head1 NAME
