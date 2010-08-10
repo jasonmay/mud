@@ -14,6 +14,17 @@ has universe => (
     required => 1,
 );
 
+has input_states => (
+    is      => 'ro',
+    isa     => 'HashRef[MUD::Input::State]',
+    default => sub { +{} },
+    traits  => ['Hash'],
+    handles => {
+        set_input_state => 'set',
+        get_input_state => 'get',
+    },
+);
+
 sub mud_message {
     return unless $ENV{MUD_DEBUG} && $ENV{MUD_DEBUG} > 0;
     my $self = shift;
