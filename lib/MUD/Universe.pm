@@ -11,7 +11,7 @@ has players => (
 );
 
 has spawn_player_code => (
-    is => 'ro',
+    is => 'rw',
     isa => 'CodeRef',
     required => 1,
 );
