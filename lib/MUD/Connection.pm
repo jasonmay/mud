@@ -22,7 +22,7 @@ has markings => (
 );
 
 has associated_player => (
-    is        => 'ro',
+    is        => 'rw',
     isa       => 'Maybe[MUD::Player]',
     predicate => 'has_associated_player',
 );
