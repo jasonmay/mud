@@ -17,11 +17,11 @@ has universe => (
 has input_states => (
     is      => 'ro',
     isa     => 'HashRef[MUD::Input::State]',
-    default => sub { +{} },
     traits  => ['Hash'],
     handles => {
-        set_input_state => 'set',
-        get_input_state => 'get',
+        set_input_state  => 'set',
+        get_input_state  => 'get',
+        has_input_states => 'count',
     },
 );
 
