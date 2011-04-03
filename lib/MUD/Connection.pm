@@ -22,8 +22,9 @@ has markings => (
 );
 
 has associated_player => (
-    is  => 'ro',
-    isa => 'Maybe[MUD::Player]',
+    is        => 'ro',
+    isa       => 'Maybe[MUD::Player]',
+    predicate => 'has_associated_player',
 );
 
 sub input_state { $_[0]->input_states->[0] }
