@@ -1,12 +1,10 @@
 #!perl
 package MUD::Controller;
 use Moose;
+use Class::MOP ();
 extends 'IO::Multiplex::Intermediary::Client';
 
-has starting_state => (
-    is       => 'rw',
-    isa      => 'MUD::Input::State',
-);
+use constant connection_class => 'MUD::Connection';
 
 has universe => (
     is => 'rw',
@@ -25,30 +23,33 @@ has input_states => (
     },
 );
 
-sub mud_message {
-    return unless $ENV{MUD_DEBUG} && $ENV{MUD_DEBUG} > 0;
-    my $self = shift;
-    my $msg = shift;
-    print STDERR sprintf("\e[0;33m[MUD]\e[m ${msg}\n", @_);
-}
+has connections => (
+    is => 'ro',
+    isa => 'HashRef[MUD::Connection]',
+    traits  => ['Hash'],
+    handles => {
+        add_connection  => 'set',
+        connection      => 'get',
+        has_connections => 'count',
+    },
+);
 
 around build_response => sub {
     my $orig     = shift;
     my $self     = shift;
-    my $wheel_id = shift;
-    my $input    = shift;
-    my $txn_id   = shift;
-    my $player   = $self->universe->players->{$wheel_id};
+    my ($wheel_id, $input, $txn_id) = @_;
 
-    if (!$player) {
-        warn "Attempt to get response from non-existent player";
+    my $conn = $self->connection($wheel_id);
+
+    if (!$conn) {
+        warn "Attempt to get response from non-existent connection";
         return '';
     }
 
-    return '' unless @{$player->input_state};
-    return $player->input_state->[0]->run(
+    return '' unless $conn->input_state;
+    return $conn->input_state->run(
         $player,
-        $self->$orig($wheel_id, $input, @_),
+        $self->$orig(@_),
         $txn_id,
     );
 };
@@ -59,8 +60,11 @@ around connect_hook => sub {
     my $data   = shift;
 
     my $id = $data->{data}->{id};
-    my $player = $self->universe->players->{$id}
-               = $self->universe->spawn_player_code->($self->universe, $id);
+    Class::MOP::load_class($self->connection_class);
+    my $conn = $self->connection_class->new;
+
+    # XXX used to spawn_player_code here - probably won't be using that'
+    #     anymore...?
 
     return $self->$orig($data, @_);
 };
@@ -71,7 +75,7 @@ around disconnect_hook => sub {
     my $data   = shift;
 
     my $id = $data->{data}->{id};
-    my $player = delete $self->universe->players->{$id};
+    $self->connection($id)->disconnect();
 
     return $self->$orig($data, @_);
 };
