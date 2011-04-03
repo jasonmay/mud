@@ -61,7 +61,10 @@ around connect_hook => sub {
 
     my $id = $data->{data}->{id};
     Class::MOP::load_class($self->connection_class);
-    my $conn = $self->connection_class->new;
+    my $conn = $self->new_connection;
+
+    $self->add_connection($id => $conn);
+    warn $id;
 
     # XXX used to spawn_player_code here - probably won't be using that'
     #     anymore...?
@@ -79,6 +82,8 @@ around disconnect_hook => sub {
 
     return $self->$orig($data, @_);
 };
+
+sub new_connection { $_[0]->connection_class->new }
 
 __PACKAGE__->meta->make_immutable;
 
