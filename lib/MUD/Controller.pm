@@ -64,7 +64,6 @@ around connect_hook => sub {
     my $conn = $self->new_connection;
 
     $self->add_connection($id => $conn);
-    warn $id;
 
     # XXX used to spawn_player_code here - probably won't be using that'
     #     anymore...?
