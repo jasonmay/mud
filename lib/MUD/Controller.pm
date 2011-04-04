@@ -48,7 +48,8 @@ around build_response => sub {
 
     return '' unless $conn->input_state;
     return $conn->input_state->run(
-        $conn->associated_player,
+        $self,
+        $conn,
         $self->$orig(@_),
         $txn_id,
     );
